@@ -13,10 +13,6 @@ const BG = "#0d1117";
 const PANEL = "#161b22";
 const BORDER = "#2a313c";
 
-// Ratio EXACT de l'image source (1376x768) : en gardant ce ratio pour le cadre, l'image
-// s'affiche toujours en entier, sans jamais rogner le haut ou le bas.
-const BANNER_RATIO = "1376 / 768";
-
 // Onglets de navigation façon HUD de jeu. "soon: true" = la page existe (pas de lien mort)
 // mais affiche juste "en construction" en attendant qu'on la développe vraiment.
 const NAV_TABS = [
@@ -28,10 +24,15 @@ const NAV_TABS = [
   { label: "TOP JOUEURS", href: "/top-joueurs", active: false, soon: true },
 ];
 
-const CRATES = [
-  { name: "Caisse Débutant", emoji: "📦" },
-  { name: "Caisse Métallique", emoji: "🗃️" },
-  { name: "Caisse Armes Légendaires", emoji: "🎖️" },
+// 5 paliers de caisses, couleurs reprises de ta charte (grise -> cyan -> bleu -> or -> violet).
+// Les prix affichés sont ceux de ta maquette -- purement visuels tant que l'achat/l'ouverture
+// réelle n'est pas branché (ça renvoie vers "Mes Caisses", en construction).
+const CRATE_TIERS = [
+  { key: "recrue", name: "Recrue", price: 200, color: "#9AA3AD" },
+  { key: "standard", name: "Standard", price: 450, color: "#2DD9E0" },
+  { key: "elite", name: "Élite", price: 900, color: "#3B6FE8" },
+  { key: "legendaire", name: "Légendaire", price: 1800, color: GOLD },
+  { key: "mythique", name: "Mythique", price: 3200, color: "#C13FE0" },
 ];
 
 export default async function Home() {
@@ -50,124 +51,145 @@ export default async function Home() {
 
   return (
     <main style={{ minHeight: "100vh", background: BG, color: "#eee" }}>
-      {/* Barre HUD du haut : profil à gauche, navigation au centre, compte à droite */}
-      <div
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 14,
-          padding: "14px 20px",
-          borderBottom: `1px solid ${BORDER}`,
-          background: PANEL,
-        }}
-      >
-        {/* Profil */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 160 }}>
-          {session ? (
-            <>
-              {session.user?.image && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={session.user.image}
-                  alt=""
-                  style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid ${CYAN}` }}
-                />
-              )}
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{session.user?.name}</div>
-                <div style={{ fontSize: 11, color: "#4ade80" }}>● En ligne</div>
-              </div>
-            </>
-          ) : (
-            <div style={{ fontSize: 13, opacity: 0.5 }}>Non connecté</div>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <nav style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
-          {NAV_TABS.map((tab) => (
-            <Link
-              key={tab.href}
-              href={tab.href}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "8px 14px",
-                borderRadius: 8,
-                fontSize: 12,
-                fontWeight: 600,
-                textDecoration: "none",
-                letterSpacing: 0.4,
-                whiteSpace: "nowrap",
-                color: tab.active ? "#12161c" : "#ccc",
-                background: tab.active ? `linear-gradient(90deg, ${GOLD}, ${GOLD_LIGHT})` : "transparent",
-                border: tab.active ? "none" : `1px solid ${BORDER}`,
-              }}
-            >
-              {tab.label}
-              {tab.soon && <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 400 }}>(bientôt)</span>}
-            </Link>
-          ))}
-        </nav>
-
-        {/* Compte */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 160, justifyContent: "flex-end" }}>
-          {session ? (
-            <>
-              <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 10, opacity: 0.5 }}>Crédits</div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: GOLD_LIGHT }}>
-                  {coins.toLocaleString("fr-FR")} ZC
-                </div>
-              </div>
-              <RechargerButton />
-              <SignOutButton />
-            </>
-          ) : (
-            <SignInButton />
-          )}
-        </div>
-      </div>
-
-      {/* Bannière hero : le cadre garde le ratio exact de l'image -> jamais de recadrage */}
-      <div
-        style={{
-          position: "relative",
-          width: "100%",
-          maxWidth: 1600,
-          margin: "0 auto",
-          aspectRatio: BANNER_RATIO,
-          overflow: "hidden",
-        }}
-      >
+      {/* Bannière hero plein écran : l'image couvre tout le viewport, la barre HUD flotte
+          par-dessus en transparence. */}
+      <div style={{ position: "relative", width: "100%", height: "100vh", minHeight: 560, overflow: "hidden" }}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/images/hero-banner.jpg"
           alt="Zizi Family"
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          style={{
+            position: "absolute",
+            inset: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            objectPosition: "center",
+          }}
         />
+        {/* Fondu en haut (pour que la barre HUD reste lisible) et en bas (transition vers la
+            suite de la page). */}
         <div
           style={{
             position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            height: "35%",
-            background: `linear-gradient(to bottom, rgba(13,17,23,0) 0%, ${BG} 96%)`,
+            inset: 0,
+            background: `linear-gradient(to bottom, rgba(13,17,23,0.75) 0%, rgba(13,17,23,0) 18%, rgba(13,17,23,0) 70%, ${BG} 100%)`,
             pointerEvents: "none",
           }}
         />
+
+        {/* Barre HUD superposée sur la bannière : profil à gauche, navigation au centre,
+            compte à droite. */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 3,
+            display: "flex",
+            flexWrap: "wrap",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 14,
+            padding: "16px 24px",
+          }}
+        >
+          {/* Profil */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 160 }}>
+            {session ? (
+              <>
+                {session.user?.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={session.user.image}
+                    alt=""
+                    style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid ${CYAN}` }}
+                  />
+                )}
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+                    {session.user?.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#4ade80", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+                    ● En ligne
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div style={{ fontSize: 13, opacity: 0.75, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+                Non connecté
+              </div>
+            )}
+          </div>
+
+          {/* Navigation */}
+          <nav style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
+            {NAV_TABS.map((tab) => (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className="hud-tab"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  letterSpacing: 0.4,
+                  whiteSpace: "nowrap",
+                  color: tab.active ? "#12161c" : "#eee",
+                  background: tab.active
+                    ? `linear-gradient(90deg, ${GOLD}, ${GOLD_LIGHT})`
+                    : "rgba(13,17,23,0.55)",
+                  border: tab.active ? "none" : `1px solid rgba(255,255,255,0.15)`,
+                  backdropFilter: "blur(6px)",
+                }}
+              >
+                {tab.label}
+                {tab.soon && <span style={{ fontSize: 9, opacity: 0.7, fontWeight: 400 }}>(bientôt)</span>}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Compte */}
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 160, justifyContent: "flex-end" }}>
+            {session ? (
+              <>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 10, opacity: 0.75, textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>
+                    Crédits
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: GOLD_LIGHT,
+                      textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                    }}
+                  >
+                    {coins.toLocaleString("fr-FR")} ZC
+                  </div>
+                </div>
+                <RechargerButton />
+                <SignOutButton />
+              </>
+            ) : (
+              <SignInButton />
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Rangée de caisses : pour l'instant purement visuel, elles renvoient vers la page
+      {/* Rangée de 5 caisses : pour l'instant purement visuel, elles renvoient vers la page
           "Mes Caisses" (en construction) -- l'ouverture animée viendra dans une prochaine étape. */}
       <div
         style={{
-          maxWidth: 900,
-          margin: "-40px auto 0",
+          maxWidth: 1100,
+          margin: "-56px auto 0",
           position: "relative",
           zIndex: 2,
           padding: "0 20px 90px",
@@ -176,25 +198,34 @@ export default async function Home() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: 16,
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: 14,
           }}
         >
-          {CRATES.map((crate) => (
-            <Link key={crate.name} href="/caisses" style={{ textDecoration: "none", color: "inherit" }}>
+          {CRATE_TIERS.map((crate) => (
+            <Link
+              key={crate.key}
+              href="/caisses"
+              className="crate-card"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
               <div
                 style={{
                   background: PANEL,
                   border: `1px solid ${BORDER}`,
-                  borderTop: `2px solid ${CYAN}`,
+                  borderTop: `3px solid ${crate.color}`,
                   borderRadius: 14,
-                  padding: "26px 16px",
+                  padding: "22px 12px",
                   textAlign: "center",
+                  boxShadow: `0 0 24px ${crate.color}33`,
                 }}
               >
-                <div style={{ fontSize: 40, marginBottom: 10 }}>{crate.emoji}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.5 }}>
+                <div style={{ fontSize: 36, marginBottom: 8 }}>📦</div>
+                <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.4, color: crate.color }}>
                   {crate.name.toUpperCase()}
+                </div>
+                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
+                  🪙 {crate.price.toLocaleString("fr-FR")}
                 </div>
               </div>
             </Link>

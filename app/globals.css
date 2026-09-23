@@ -1,0 +1,31 @@
+/* Animations de survol partagées par les boutons, onglets et cartes de caisses du site.
+   Regroupées ici (plutôt qu'en styled-jsx) car ces classes doivent s'appliquer de façon
+   fiable même quand l'élément est rendu via <Link> ou un composant (pas juste une balise
+   native), ce que le CSS scoping automatique de styled-jsx ne garantit pas toujours. */
+
+.hud-tab {
+  transition: transform 0.15s ease, filter 0.15s ease, border-color 0.15s ease;
+}
+.hud-tab:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.2);
+}
+
+.btn-anim {
+  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+}
+.btn-anim:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+.btn-anim:active {
+  transform: translateY(0);
+}
+
+.crate-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+}
+.crate-card:hover {
+  transform: translateY(-8px) scale(1.03);
+  filter: brightness(1.12);
+}

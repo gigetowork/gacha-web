@@ -44,7 +44,7 @@ const btnRecharger: CSSProperties = {
 
 export function SignInButton() {
   return (
-    <button onClick={() => signIn("discord")} style={btnDiscord}>
+    <button onClick={() => signIn("discord")} style={btnDiscord} className="btn-anim">
       Se connecter avec Discord
     </button>
   );
@@ -52,7 +52,7 @@ export function SignInButton() {
 
 export function SignOutButton() {
   return (
-    <button onClick={() => signOut()} style={btnGhost}>
+    <button onClick={() => signOut()} style={btnGhost} className="btn-anim">
       Se déconnecter
     </button>
   );
@@ -62,7 +62,9 @@ export function RechargerButton() {
   // Pointe vers la boutique (pas encore construite) plutôt que de simuler un achat.
   return (
     <a href="/boutique" style={{ textDecoration: "none" }}>
-      <button style={btnRecharger}>RECHARGER</button>
+      <button style={btnRecharger} className="btn-anim">
+        RECHARGER
+      </button>
     </a>
   );
 }
