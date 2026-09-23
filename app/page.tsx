@@ -24,15 +24,15 @@ const NAV_TABS = [
   { label: "TOP JOUEURS", href: "/top-joueurs", active: false, soon: true },
 ];
 
-// 5 paliers de caisses, couleurs reprises de ta charte (grise -> cyan -> bleu -> or -> violet).
-// Les prix affichés sont ceux de ta maquette -- purement visuels tant que l'achat/l'ouverture
-// réelle n'est pas branché (ça renvoie vers "Mes Caisses", en construction).
+// 5 paliers de caisses -- prix ET couleurs recopiés EXACTEMENT de la liste CASES dans bot.py
+// (40/100/220/400/700 🪙, couleurs discord.Color de chaque caisse), pour que le site n'affiche
+// jamais un chiffre différent de ce que dit le bot sur Discord.
 const CRATE_TIERS = [
-  { key: "recrue", name: "Recrue", price: 200, color: "#9AA3AD" },
-  { key: "standard", name: "Standard", price: 450, color: "#2DD9E0" },
-  { key: "elite", name: "Élite", price: 900, color: "#3B6FE8" },
-  { key: "legendaire", name: "Légendaire", price: 1800, color: GOLD },
-  { key: "mythique", name: "Mythique", price: 3200, color: "#C13FE0" },
+  { key: "recrue", name: "Recrue", price: 40, color: "#95A5A6" },
+  { key: "standard", name: "Standard", price: 100, color: "#1ABC9C" },
+  { key: "elite", name: "Élite", price: 220, color: "#3498DB" },
+  { key: "legendaire", name: "Légendaire", price: 400, color: "#F1C40F" },
+  { key: "mythique", name: "Mythique", price: 700, color: "#9B59B6" },
 ];
 
 export default async function Home() {
