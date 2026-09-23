@@ -94,6 +94,25 @@ export async function POST(req: Request) {
 
     await client.query("COMMIT");
 
+    // Rouleau visuel façon CS:GO : ~60 objets tirés au hasard avec les MÊMES probabilités que la
+    // caisse (purement pour le décor du défilement, aucun impact sur le résultat ni sur la base
+    // -- le vrai gain a déjà été tiré et enregistré ci-dessus), avec le vrai gain inséré à
+    // WIN_INDEX pour que l'animation s'arrête pile dessus.
+    const REEL_LENGTH = 60;
+    const WIN_INDEX = 52;
+    const reel = Array.from({ length: REEL_LENGTH }, (_, i) => {
+      if (i === WIN_INDEX) {
+        return { name: skin.name, weapon, rarity, image };
+      }
+      const filler = rollSkin(caseConfig.weights);
+      return {
+        name: filler.skin.name,
+        weapon: filler.skin.weapon || "AK-47",
+        rarity: filler.rarity,
+        image: filler.image,
+      };
+    });
+
     return NextResponse.json({
       duplicate,
       xpGain,
@@ -105,6 +124,8 @@ export async function POST(req: Request) {
       variant,
       price,
       image,
+      reel,
+      winIndex: WIN_INDEX,
     });
   } catch (err) {
     await client.query("ROLLBACK");

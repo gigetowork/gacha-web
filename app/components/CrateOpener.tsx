@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CASES, FREE_CASE, RARITY_COLORS, type CaseConfig } from "@/lib/caisses";
+import CaseReel, { type ReelItem } from "./CaseReel";
 
 const PANEL = "#161b22";
 const BORDER = "#2a313c";
@@ -18,6 +19,8 @@ type OpenResult = {
   variant: string;
   price: number;
   image: string;
+  reel: ReelItem[];
+  winIndex: number;
 };
 
 function formatSkinLabel(weapon: string, name: string, variant: string) {
@@ -35,7 +38,8 @@ export default function CrateOpener({
 }) {
   const router = useRouter();
   const [openingKey, setOpeningKey] = useState<string | null>(null);
-  const [result, setResult] = useState<OpenResult | null>(null);
+  const [phase, setPhase] = useState<"idle" | "spinning" | "result">("idle");
+  const [pending, setPending] = useState<OpenResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const allCrates: CaseConfig[] = [FREE_CASE, ...CASES];
@@ -64,17 +68,28 @@ export default function CrateOpener({
         } else {
           setError("Une erreur est survenue, réessaie.");
         }
+        setOpeningKey(null);
         return;
       }
-      // Petit suspense avant la révélation, pour que ça ne paraisse pas instantané/plat.
-      await new Promise((r) => setTimeout(r, 900));
-      setResult(data as OpenResult);
-      router.refresh(); // recharge les données serveur (solde affiché dans la barre du haut, etc.)
+      // Le résultat est déjà acquis côté serveur -> on lance tout de suite le rouleau visuel,
+      // qui va défiler puis s'arrêter dessus.
+      setPending(data as OpenResult);
+      setPhase("spinning");
+      router.refresh(); // recharge le solde affiché dans la barre du haut dès maintenant
     } catch {
       setError("Impossible de contacter le serveur, réessaie.");
-    } finally {
       setOpeningKey(null);
     }
+  }
+
+  function handleReelDone() {
+    setPhase("result");
+    setOpeningKey(null);
+  }
+
+  function closeModal() {
+    setPhase("idle");
+    setPending(null);
   }
 
   return (
@@ -127,9 +142,7 @@ export default function CrateOpener({
         })}
       </div>
 
-      {error && (
-        <p style={{ textAlign: "center", color: "#F87171", fontSize: 13, marginTop: 18 }}>{error}</p>
-      )}
+      {error && <p style={{ textAlign: "center", color: "#F87171", fontSize: 13, marginTop: 18 }}>{error}</p>}
 
       {!isAuthenticated && !error && (
         <p style={{ textAlign: "center", opacity: 0.5, fontSize: 13, marginTop: 24 }}>
@@ -137,76 +150,91 @@ export default function CrateOpener({
         </p>
       )}
 
-      {result && (
+      {phase !== "idle" && pending && (
         <div
           role="dialog"
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.75)",
+            background: "rgba(0,0,0,0.8)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             zIndex: 50,
             padding: 20,
           }}
-          onClick={() => setResult(null)}
+          onClick={() => phase === "result" && closeModal()}
         >
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
               background: PANEL,
-              border: `1px solid ${RARITY_COLORS[result.rarity] ?? BORDER}`,
+              border: `1px solid ${phase === "result" ? RARITY_COLORS[pending.rarity] ?? BORDER : BORDER}`,
               borderRadius: 16,
-              padding: "32px 28px",
-              maxWidth: 360,
+              padding: "28px 24px",
+              maxWidth: 420,
               width: "100%",
               textAlign: "center",
-              boxShadow: `0 0 60px ${(RARITY_COLORS[result.rarity] ?? "#fff") + "55"}`,
+              boxShadow:
+                phase === "result" ? `0 0 60px ${(RARITY_COLORS[pending.rarity] ?? "#fff") + "55"}` : "none",
             }}
           >
-            <p style={{ fontSize: 12, opacity: 0.6, marginBottom: 4 }}>{result.caseName}</p>
-            {result.image && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={result.image}
-                alt={result.skin.name}
-                style={{ width: "100%", maxHeight: 160, objectFit: "contain", margin: "12px 0" }}
-              />
-            )}
-            <p style={{ fontWeight: 700, fontSize: 16, margin: "8px 0 2px" }}>
-              {formatSkinLabel(result.skin.weapon, result.skin.name, result.variant)}
-            </p>
-            <p style={{ fontSize: 12, opacity: 0.7 }}>{result.wear}</p>
-            <p style={{ color: RARITY_COLORS[result.rarity] ?? "#fff", fontWeight: 600, marginTop: 6 }}>
-              {result.rarity}
-            </p>
-            <p style={{ fontSize: 13, opacity: 0.8, marginTop: 4 }}>Valeur estimée : {result.price.toFixed(2)} $</p>
+            <p style={{ fontSize: 12, opacity: 0.6, marginBottom: 14 }}>{pending.caseName}</p>
 
-            {result.duplicate ? (
-              <p style={{ marginTop: 14, fontSize: 13, color: "#FFD778" }}>
-                ♻️ Doublon ! Convertie en <strong>+{result.xpGain} XP</strong>.
-              </p>
-            ) : (
-              <p style={{ marginTop: 14, fontSize: 13, color: "#4ade80" }}>✅ Ajoutée à ton inventaire</p>
+            {phase === "spinning" && (
+              <>
+                <CaseReel items={pending.reel} winIndex={pending.winIndex} onDone={handleReelDone} />
+                <p style={{ fontSize: 12, opacity: 0.5, marginTop: 16 }}>Ouverture en cours…</p>
+              </>
             )}
 
-            <button
-              onClick={() => setResult(null)}
-              className="btn-anim"
-              style={{
-                marginTop: 20,
-                background: "transparent",
-                border: `1px solid ${BORDER}`,
-                color: "#ccc",
-                padding: "10px 22px",
-                borderRadius: 10,
-                fontSize: 14,
-                cursor: "pointer",
-              }}
-            >
-              Fermer
-            </button>
+            {phase === "result" && (
+              <>
+                {pending.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={pending.image}
+                    alt={pending.skin.name}
+                    style={{ width: "100%", maxHeight: 160, objectFit: "contain", margin: "4px 0 12px" }}
+                  />
+                )}
+                <p style={{ fontWeight: 700, fontSize: 16, margin: "8px 0 2px" }}>
+                  {formatSkinLabel(pending.skin.weapon, pending.skin.name, pending.variant)}
+                </p>
+                <p style={{ fontSize: 12, opacity: 0.7 }}>{pending.wear}</p>
+                <p style={{ color: RARITY_COLORS[pending.rarity] ?? "#fff", fontWeight: 600, marginTop: 6 }}>
+                  {pending.rarity}
+                </p>
+                <p style={{ fontSize: 13, opacity: 0.8, marginTop: 4 }}>
+                  Valeur estimée : {pending.price.toFixed(2)} $
+                </p>
+
+                {pending.duplicate ? (
+                  <p style={{ marginTop: 14, fontSize: 13, color: "#FFD778" }}>
+                    ♻️ Doublon ! Convertie en <strong>+{pending.xpGain} XP</strong>.
+                  </p>
+                ) : (
+                  <p style={{ marginTop: 14, fontSize: 13, color: "#4ade80" }}>✅ Ajoutée à ton inventaire</p>
+                )}
+
+                <button
+                  onClick={closeModal}
+                  className="btn-anim"
+                  style={{
+                    marginTop: 20,
+                    background: "transparent",
+                    border: `1px solid ${BORDER}`,
+                    color: "#ccc",
+                    padding: "10px 22px",
+                    borderRadius: 10,
+                    fontSize: 14,
+                    cursor: "pointer",
+                  }}
+                >
+                  Fermer
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
