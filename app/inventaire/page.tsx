@@ -1,7 +1,7 @@
 import { getServerSession } from "next-auth";
 import Link from "next/link";
-import { authOptions } from "../api/auth/[...nextauth]/route";
-import { pool } from "../../lib/db";
+import { authOptions } from "@/lib/auth";
+import { pool } from "@/lib/db";
 
 type InventoryRow = {
   rowid: number;
