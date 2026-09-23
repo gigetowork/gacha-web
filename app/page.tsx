@@ -1,12 +1,11 @@
-"use client";
-
 import Link from "next/link";
-import type { CSSProperties } from "react";
-import { useSession, signIn, signOut } from "next-auth/react";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { pool } from "@/lib/db";
+import { SignInButton, SignOutButton, RechargerButton } from "./components/AuthButtons";
 
 // Couleurs reprises du logo "ZIZI FAMILY" sur la bannière : doré/orange pour "ZIZI",
-// cyan pour "FAMILY". Le fond sombre reprend le gris métallique de l'arrière-plan de l'image,
-// pour que la bannière se fonde naturellement dans le reste de la page.
+// cyan pour "FAMILY".
 const GOLD = "#F5B942";
 const GOLD_LIGHT = "#FFD778";
 const CYAN = "#3FD0E0";
@@ -15,53 +14,125 @@ const PANEL = "#161b22";
 const BORDER = "#2a313c";
 
 // Ratio EXACT de l'image source (1376x768) : en gardant ce ratio pour le cadre, l'image
-// s'affiche toujours en entier, sans jamais rogner le haut ou le bas, quelle que soit la
-// largeur d'écran.
+// s'affiche toujours en entier, sans jamais rogner le haut ou le bas.
 const BANNER_RATIO = "1376 / 768";
 
-const btnDiscord: CSSProperties = {
-  display: "inline-block",
-  background: "#5865F2",
-  color: "white",
-  border: "none",
-  padding: "14px 28px",
-  borderRadius: 10,
-  fontSize: 16,
-  fontWeight: 600,
-  cursor: "pointer",
-  boxShadow: "0 8px 24px rgba(88,101,242,0.35)",
-};
+// Onglets de navigation façon HUD de jeu. "soon: true" = la page existe (pas de lien mort)
+// mais affiche juste "en construction" en attendant qu'on la développe vraiment.
+const NAV_TABS = [
+  { label: "ACCUEIL", href: "/", active: true, soon: false },
+  { label: "INVENTAIRE", href: "/inventaire", active: false, soon: false },
+  { label: "BOUTIQUE", href: "/boutique", active: false, soon: true },
+  { label: "MES CAISSES", href: "/caisses", active: false, soon: true },
+  { label: "STATS", href: "/stats", active: false, soon: true },
+  { label: "TOP JOUEURS", href: "/top-joueurs", active: false, soon: true },
+];
 
-const btnPrimary: CSSProperties = {
-  display: "inline-block",
-  background: `linear-gradient(90deg, ${GOLD}, ${GOLD_LIGHT})`,
-  color: "#1a1206",
-  fontWeight: 700,
-  border: "none",
-  padding: "14px 30px",
-  borderRadius: 10,
-  fontSize: 16,
-  textDecoration: "none",
-  boxShadow: "0 8px 24px rgba(245,185,66,0.3)",
-};
+const CRATES = [
+  { name: "Caisse Débutant", emoji: "📦" },
+  { name: "Caisse Métallique", emoji: "🗃️" },
+  { name: "Caisse Armes Légendaires", emoji: "🎖️" },
+];
 
-const btnGhost: CSSProperties = {
-  background: "transparent",
-  color: "#aaa",
-  border: `1px solid ${BORDER}`,
-  padding: "10px 22px",
-  borderRadius: 10,
-  fontSize: 14,
-  cursor: "pointer",
-};
+export default async function Home() {
+  const session = await getServerSession(authOptions);
 
-export default function Home() {
-  const { data: session, status } = useSession();
+  // Vrais crédits du joueur (table economy, partagée avec le bot) -- jamais de chiffre inventé.
+  let coins = 0;
+  if (session) {
+    const discordId = (session.user as any)?.discordId as string;
+    const { rows } = await pool.query<{ coins: number }>(
+      "SELECT coins FROM economy WHERE user_id = $1::bigint",
+      [discordId]
+    );
+    coins = rows[0]?.coins ?? 0;
+  }
 
   return (
     <main style={{ minHeight: "100vh", background: BG, color: "#eee" }}>
-      {/* Bannière hero : le cadre garde le ratio exact de l'image -> jamais de recadrage,
-          juste une mise à l'échelle propre selon la largeur d'écran. */}
+      {/* Barre HUD du haut : profil à gauche, navigation au centre, compte à droite */}
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 14,
+          padding: "14px 20px",
+          borderBottom: `1px solid ${BORDER}`,
+          background: PANEL,
+        }}
+      >
+        {/* Profil */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 160 }}>
+          {session ? (
+            <>
+              {session.user?.image && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={session.user.image}
+                  alt=""
+                  style={{ width: 38, height: 38, borderRadius: "50%", border: `2px solid ${CYAN}` }}
+                />
+              )}
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: 14, fontWeight: 600 }}>{session.user?.name}</div>
+                <div style={{ fontSize: 11, color: "#4ade80" }}>● En ligne</div>
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 13, opacity: 0.5 }}>Non connecté</div>
+          )}
+        </div>
+
+        {/* Navigation */}
+        <nav style={{ display: "flex", flexWrap: "wrap", gap: 6, justifyContent: "center" }}>
+          {NAV_TABS.map((tab) => (
+            <Link
+              key={tab.href}
+              href={tab.href}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 14px",
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                textDecoration: "none",
+                letterSpacing: 0.4,
+                whiteSpace: "nowrap",
+                color: tab.active ? "#12161c" : "#ccc",
+                background: tab.active ? `linear-gradient(90deg, ${GOLD}, ${GOLD_LIGHT})` : "transparent",
+                border: tab.active ? "none" : `1px solid ${BORDER}`,
+              }}
+            >
+              {tab.label}
+              {tab.soon && <span style={{ fontSize: 9, opacity: 0.6, fontWeight: 400 }}>(bientôt)</span>}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Compte */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 160, justifyContent: "flex-end" }}>
+          {session ? (
+            <>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: 10, opacity: 0.5 }}>Crédits</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: GOLD_LIGHT }}>
+                  {coins.toLocaleString("fr-FR")} ZC
+                </div>
+              </div>
+              <RechargerButton />
+              <SignOutButton />
+            </>
+          ) : (
+            <SignInButton />
+          )}
+        </div>
+      </div>
+
+      {/* Bannière hero : le cadre garde le ratio exact de l'image -> jamais de recadrage */}
       <div
         style={{
           position: "relative",
@@ -78,8 +149,6 @@ export default function Home() {
           alt="Zizi Family"
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
         />
-        {/* Fondu vers le fond sombre pour que la bannière s'intègre à la page plutôt que de
-            s'arrêter net sur un bord tranché. */}
         <div
           style={{
             position: "absolute",
@@ -93,79 +162,54 @@ export default function Home() {
         />
       </div>
 
-      {/* Contenu principal, remonté légèrement sur la bannière pour un effet "panneau flottant" */}
+      {/* Rangée de caisses : pour l'instant purement visuel, elles renvoient vers la page
+          "Mes Caisses" (en construction) -- l'ouverture animée viendra dans une prochaine étape. */}
       <div
         style={{
-          maxWidth: 520,
-          margin: "-48px auto 0",
+          maxWidth: 900,
+          margin: "-40px auto 0",
           position: "relative",
           zIndex: 2,
-          textAlign: "center",
-          padding: "0 20px 100px",
+          padding: "0 20px 90px",
         }}
       >
-        {status === "loading" && <p style={{ opacity: 0.6 }}>Chargement…</p>}
-
-        {status === "unauthenticated" && (
-          <div
-            style={{
-              background: PANEL,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 16,
-              padding: "36px 28px",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
-            }}
-          >
-            <h1
-              style={{
-                margin: "0 0 8px",
-                fontSize: 26,
-                background: `linear-gradient(90deg, ${GOLD_LIGHT}, ${CYAN})`,
-                WebkitBackgroundClip: "text",
-                WebkitTextFillColor: "transparent",
-                backgroundClip: "text",
-              }}
-            >
-              Bienvenue dans l'arsenal
-            </h1>
-            <p style={{ opacity: 0.75, marginBottom: 28, lineHeight: 1.5 }}>
-              Connecte-toi avec ton compte Discord pour accéder à ton inventaire de skins.
-            </p>
-            <button onClick={() => signIn("discord")} style={btnDiscord}>
-              Se connecter avec Discord
-            </button>
-          </div>
-        )}
-
-        {status === "authenticated" && (
-          <div
-            style={{
-              background: PANEL,
-              border: `1px solid ${BORDER}`,
-              borderRadius: 16,
-              padding: "36px 28px",
-              boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
-            }}
-          >
-            <p style={{ margin: 0, fontSize: 18 }}>
-              Content de te revoir, <strong style={{ color: GOLD_LIGHT }}>{session.user?.name}</strong>
-            </p>
-            {/* Cet ID est EXACTEMENT le même que ctx.author.id côté bot Python : c'est la clé
-                qui sert à aller chercher l'inventaire de ce joueur en base. */}
-            <p style={{ opacity: 0.5, fontSize: 12, marginTop: 4, marginBottom: 28 }}>
-              ID Discord : {(session.user as any)?.discordId}
-            </p>
-
-            <Link href="/inventaire" style={btnPrimary}>
-              🎒 Voir mon inventaire
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+            gap: 16,
+          }}
+        >
+          {CRATES.map((crate) => (
+            <Link key={crate.name} href="/caisses" style={{ textDecoration: "none", color: "inherit" }}>
+              <div
+                style={{
+                  background: PANEL,
+                  border: `1px solid ${BORDER}`,
+                  borderTop: `2px solid ${CYAN}`,
+                  borderRadius: 14,
+                  padding: "26px 16px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: 40, marginBottom: 10 }}>{crate.emoji}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.5 }}>
+                  {crate.name.toUpperCase()}
+                </div>
+              </div>
             </Link>
+          ))}
+        </div>
 
-            <div style={{ marginTop: 18 }}>
-              <button onClick={() => signOut()} style={btnGhost}>
-                Se déconnecter
-              </button>
-            </div>
-          </div>
+        {!session ? (
+          <p style={{ textAlign: "center", opacity: 0.5, fontSize: 13, marginTop: 24 }}>
+            Connecte-toi avec Discord pour retrouver ton compte ici.
+          </p>
+        ) : (
+          <p style={{ textAlign: "center", opacity: 0.5, fontSize: 13, marginTop: 24 }}>
+            🚧 L'ouverture de caisses depuis le site arrive bientôt — pour l'instant, utilise{" "}
+            <code>!pull</code> sur Discord.
+          </p>
         )}
       </div>
     </main>
