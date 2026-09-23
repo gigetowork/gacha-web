@@ -172,7 +172,7 @@ export default function CrateOpener({
               border: `1px solid ${phase === "result" ? RARITY_COLORS[pending.rarity] ?? BORDER : BORDER}`,
               borderRadius: 16,
               padding: "28px 24px",
-              maxWidth: 420,
+              maxWidth: phase === "spinning" ? 900 : 420,
               width: "100%",
               textAlign: "center",
               boxShadow:

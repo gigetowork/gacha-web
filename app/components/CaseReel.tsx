@@ -9,10 +9,12 @@ const GOLD_LIGHT = "#FFD778";
 
 export type ReelItem = { name: string; weapon: string; rarity: string; image: string };
 
-// Largeur d'un objet + son espacement (gap) dans le rouleau, en px -- DOIT correspondre
-// exactement aux styles ci-dessous (flex: 0 0 88px + gap: 8px), sinon le calcul de position
-// d'arrêt de l'animation atterrit à côté de l'objet gagnant plutôt que pile dessus.
-const ITEM_PITCH = 96;
+// Dimensions d'un objet du rouleau, en px -- DOIVENT correspondre exactement aux styles
+// ci-dessous (flex: 0 0 ITEM_WIDTH + gap: GAP), sinon le calcul de position d'arrêt de
+// l'animation atterrit à côté de l'objet gagnant plutôt que pile dessus.
+const ITEM_WIDTH = 128;
+const GAP = 12;
+const ITEM_PITCH = ITEM_WIDTH + GAP;
 const REEL_DURATION_MS = 5200;
 
 export default function CaseReel({
@@ -30,9 +32,13 @@ export default function CaseReel({
   useEffect(() => {
     const containerWidth = wrapRef.current?.clientWidth ?? 340;
     // Petit décalage aléatoire à l'intérieur de la case gagnante (comme sur CS:GO, l'arrêt n'est
-    // jamais pile au pixel près au centre de l'objet).
-    const jitter = (Math.random() - 0.5) * (ITEM_PITCH * 0.5);
-    const target = -(winIndex * ITEM_PITCH + ITEM_PITCH / 2 - containerWidth / 2) + jitter;
+    // jamais pile au pixel près). Bornée à une fraction de la largeur de l'OBJET (pas du pitch,
+    // qui inclut l'espacement) : un jitter trop large ferait déborder le marqueur sur l'objet
+    // voisin, et le rouleau semblerait s'arrêter sur le mauvais skin alors que le vrai gain reste
+    // correct (c'était le bug : ±48px de jitter pouvait dépasser la moitié de la largeur d'un
+    // objet de 88px). Ici, ±25% de la largeur -> toujours nettement à l'intérieur de l'objet.
+    const jitter = (Math.random() - 0.5) * (ITEM_WIDTH * 0.5);
+    const target = -(winIndex * ITEM_PITCH + ITEM_WIDTH / 2 - containerWidth / 2) + jitter;
 
     // Le rouleau démarre à translateX(0) (peint sur l'écran une frame), PUIS on lui donne sa
     // position finale sur la frame suivante -- c'est ce décalage d'une frame qui permet à la
@@ -60,10 +66,9 @@ export default function CaseReel({
         position: "relative",
         overflow: "hidden",
         width: "100%",
-        maxWidth: 380,
-        height: 96,
+        height: 150,
         margin: "0 auto",
-        borderRadius: 10,
+        borderRadius: 12,
         background: "#0a0d12",
         border: `1px solid ${BORDER}`,
       }}
@@ -113,8 +118,8 @@ export default function CaseReel({
         ref={trackRef}
         style={{
           display: "flex",
-          gap: 8,
-          padding: "8px 0",
+          gap: GAP,
+          padding: "12px 0",
           transform: "translateX(0px)",
           transition: `transform ${REEL_DURATION_MS}ms cubic-bezier(0.11, 0.82, 0.16, 1)`,
           willChange: "transform",
@@ -126,17 +131,17 @@ export default function CaseReel({
             <div
               key={i}
               style={{
-                flex: "0 0 88px",
-                width: 88,
-                height: 78,
+                flex: `0 0 ${ITEM_WIDTH}px`,
+                width: ITEM_WIDTH,
+                height: 126,
                 background: PANEL,
                 border: `1px solid ${color}55`,
-                borderBottom: `3px solid ${color}`,
-                borderRadius: 8,
+                borderBottom: `4px solid ${color}`,
+                borderRadius: 10,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: 4,
+                padding: 8,
               }}
             >
               {it.image && (
