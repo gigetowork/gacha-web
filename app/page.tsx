@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import { SignInButton, SignOutButton, RechargerButton } from "./components/AuthButtons";
+import CrateOpener from "./components/CrateOpener";
+import { missionDayKey } from "@/lib/caisses";
 
 // Couleurs reprises du logo "ZIZI FAMILY" sur la bannière : doré/orange pour "ZIZI",
 // cyan pour "FAMILY".
@@ -10,8 +12,6 @@ const GOLD = "#F5B942";
 const GOLD_LIGHT = "#FFD778";
 const CYAN = "#3FD0E0";
 const BG = "#0d1117";
-const PANEL = "#161b22";
-const BORDER = "#2a313c";
 
 // Onglets de navigation façon HUD de jeu. "soon: true" = la page existe (pas de lien mort)
 // mais affiche juste "en construction" en attendant qu'on la développe vraiment.
@@ -19,34 +19,27 @@ const NAV_TABS = [
   { label: "ACCUEIL", href: "/", active: true, soon: false },
   { label: "INVENTAIRE", href: "/inventaire", active: false, soon: false },
   { label: "BOUTIQUE", href: "/boutique", active: false, soon: true },
-  { label: "MES CAISSES", href: "/caisses", active: false, soon: true },
+  { label: "MES CAISSES", href: "/#caisses", active: false, soon: false },
   { label: "STATS", href: "/stats", active: false, soon: true },
   { label: "TOP JOUEURS", href: "/top-joueurs", active: false, soon: true },
-];
-
-// 5 paliers de caisses -- prix ET couleurs recopiés EXACTEMENT de la liste CASES dans bot.py
-// (40/100/220/400/700 🪙, couleurs discord.Color de chaque caisse), pour que le site n'affiche
-// jamais un chiffre différent de ce que dit le bot sur Discord.
-const CRATE_TIERS = [
-  { key: "recrue", name: "Recrue", price: 40, color: "#95A5A6" },
-  { key: "standard", name: "Standard", price: 100, color: "#1ABC9C" },
-  { key: "elite", name: "Élite", price: 220, color: "#3498DB" },
-  { key: "legendaire", name: "Légendaire", price: 400, color: "#F1C40F" },
-  { key: "mythique", name: "Mythique", price: 700, color: "#9B59B6" },
 ];
 
 export default async function Home() {
   const session = await getServerSession(authOptions);
 
-  // Vrais crédits du joueur (table economy, partagée avec le bot) -- jamais de chiffre inventé.
+  // Vrais crédits du joueur ET disponibilité de la caisse gratuite du jour (tables economy /
+  // free_case_claims, partagées avec le bot) -- jamais de chiffre ou d'état inventé.
   let coins = 0;
+  let freeCaseAvailable = false;
   if (session) {
     const discordId = (session.user as any)?.discordId as string;
-    const { rows } = await pool.query<{ coins: number }>(
-      "SELECT coins FROM economy WHERE user_id = $1::bigint",
-      [discordId]
-    );
-    coins = rows[0]?.coins ?? 0;
+    const [coinsRes, freeCaseRes] = await Promise.all([
+      pool.query<{ coins: number }>("SELECT coins FROM economy WHERE user_id = $1::bigint", [discordId]),
+      pool.query<{ day: string }>("SELECT day FROM free_case_claims WHERE user_id = $1::bigint", [discordId]),
+    ]);
+    coins = coinsRes.rows[0]?.coins ?? 0;
+    const claimedDay = freeCaseRes.rows[0]?.day;
+    freeCaseAvailable = claimedDay !== missionDayKey();
   }
 
   return (
@@ -184,64 +177,20 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Rangée de 5 caisses : pour l'instant purement visuel, elles renvoient vers la page
-          "Mes Caisses" (en construction) -- l'ouverture animée viendra dans une prochaine étape. */}
+      {/* Rangée de 6 caisses (5 payantes + la gratuite) : ouverture RÉELLE, connectée à la même
+          base que le bot (débite les vraies pièces, ajoute vraiment le skin à l'inventaire). */}
       <div
+        id="caisses"
         style={{
-          maxWidth: 1100,
+          maxWidth: 1200,
           margin: "-56px auto 0",
           position: "relative",
           zIndex: 2,
           padding: "0 20px 90px",
+          scrollMarginTop: 90,
         }}
       >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-            gap: 14,
-          }}
-        >
-          {CRATE_TIERS.map((crate) => (
-            <Link
-              key={crate.key}
-              href="/caisses"
-              className="crate-card"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div
-                style={{
-                  background: PANEL,
-                  border: `1px solid ${BORDER}`,
-                  borderTop: `3px solid ${crate.color}`,
-                  borderRadius: 14,
-                  padding: "22px 12px",
-                  textAlign: "center",
-                  boxShadow: `0 0 24px ${crate.color}33`,
-                }}
-              >
-                <div style={{ fontSize: 36, marginBottom: 8 }}>📦</div>
-                <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: 0.4, color: crate.color }}>
-                  {crate.name.toUpperCase()}
-                </div>
-                <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>
-                  🪙 {crate.price.toLocaleString("fr-FR")}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {!session ? (
-          <p style={{ textAlign: "center", opacity: 0.5, fontSize: 13, marginTop: 24 }}>
-            Connecte-toi avec Discord pour retrouver ton compte ici.
-          </p>
-        ) : (
-          <p style={{ textAlign: "center", opacity: 0.5, fontSize: 13, marginTop: 24 }}>
-            🚧 L'ouverture de caisses depuis le site arrive bientôt — pour l'instant, utilise{" "}
-            <code>!pull</code> sur Discord.
-          </p>
-        )}
+        <CrateOpener isAuthenticated={!!session} freeCaseAvailable={freeCaseAvailable} />
       </div>
     </main>
   );
