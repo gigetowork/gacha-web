@@ -67,6 +67,35 @@
   animation: modalPop 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* Image de caisse "au repos" sur sa page détaillée : légère lévitation + pulsation. */
+@keyframes caseFloat {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-14px) rotate(1deg); }
+}
+.case-float {
+  animation: caseFloat 3.6s ease-in-out infinite;
+}
+
+/* Rouleau d'ouverture de caisse (CaseReel) : impact à l'atterrissage sur l'objet gagnant. */
+@keyframes reelItemPop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.12); }
+  60% { transform: scale(0.97); }
+  100% { transform: scale(1.04); }
+}
+.reel-item-pop {
+  animation: reelItemPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes reelFlashFade {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.reel-flash {
+  animation: reelFlashFade 0.7s ease-out forwards;
+}
+
 /* Confettis de la page Investissements, quand un placement arrive à échéance. */
 @keyframes confettiFall {
   0% {

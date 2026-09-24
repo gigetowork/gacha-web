@@ -3,8 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { pool } from "@/lib/db";
 import { SignInButton, SignOutButton, RechargerButton } from "./components/AuthButtons";
-import CrateOpener from "./components/CrateOpener";
-import { missionDayKey } from "@/lib/caisses";
+import { CASES, FREE_CASE, missionDayKey } from "@/lib/caisses";
 
 // Couleurs reprises du logo "ZIZI FAMILY" sur la bannière : doré/orange pour "ZIZI",
 // cyan pour "FAMILY".
@@ -20,8 +19,7 @@ const NAV_TABS = [
   { label: "INVENTAIRE", href: "/inventaire", active: false, soon: false },
   { label: "ÉQUIPEMENT", href: "/equipement", active: false, soon: false },
   { label: "INVESTIR", href: "/investissements", active: false, soon: false },
-  { label: "BOUTIQUE", href: "/boutique", active: false, soon: true },
-  { label: "MES CAISSES", href: "/#caisses", active: false, soon: false },
+  { label: "MES CAISSES", href: "/caisses", active: false, soon: false },
   { label: "STATS", href: "/stats", active: false, soon: true },
   { label: "TOP JOUEURS", href: "/top-joueurs", active: false, soon: true },
 ];
@@ -179,8 +177,9 @@ export default async function Home() {
         </div>
       </div>
 
-      {/* Rangée de 6 caisses (5 payantes + la gratuite) : ouverture RÉELLE, connectée à la même
-          base que le bot (débite les vraies pièces, ajoute vraiment le skin à l'inventaire). */}
+      {/* Rangée de 6 caisses (5 payantes + la gratuite) : chaque caisse mène à sa page détaillée
+          (vraie image, vraies probabilités par rareté, ouverture réelle connectée à la même base
+          que le bot). */}
       <div
         id="caisses"
         style={{
@@ -192,7 +191,74 @@ export default async function Home() {
           scrollMarginTop: 90,
         }}
       >
-        <CrateOpener isAuthenticated={!!session} freeCaseAvailable={freeCaseAvailable} />
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+            gap: 14,
+          }}
+        >
+          {[FREE_CASE, ...CASES].map((crate) => {
+            const isFree = !!crate.free;
+            const locked = isFree && !freeCaseAvailable;
+            return (
+              <Link
+                key={crate.key}
+                href={`/caisses/${crate.key}`}
+                className="crate-card btn-anim"
+                style={{
+                  display: "block",
+                  background: "#161b22",
+                  border: "1px solid #2a313c",
+                  borderTop: `3px solid ${crate.color}`,
+                  borderRadius: 14,
+                  padding: "16px 10px 14px",
+                  textAlign: "center",
+                  textDecoration: "none",
+                  color: "inherit",
+                  boxShadow: `0 0 24px ${crate.color}33`,
+                  position: "relative",
+                }}
+              >
+                {isFree && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      padding: "2px 6px",
+                      borderRadius: 5,
+                      background: locked ? "rgba(255,255,255,0.1)" : `${crate.color}33`,
+                      color: locked ? "#999" : crate.color,
+                    }}
+                  >
+                    {locked ? "RÉCLAMÉE" : "GRATUITE"}
+                  </span>
+                )}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={crate.image}
+                  alt={crate.name}
+                  style={{
+                    width: "100%",
+                    height: 88,
+                    objectFit: "contain",
+                    filter: `drop-shadow(0 0 12px ${crate.color}77)`,
+                    opacity: locked ? 0.45 : 1,
+                  }}
+                />
+                <div style={{ fontSize: 12, fontWeight: 700, marginTop: 8, letterSpacing: 0.3, color: crate.color }}>
+                  {(isFree ? "Gratuite" : crate.name.replace("Caisse ", "")).toUpperCase()}
+                </div>
+                <div style={{ fontSize: 11, opacity: 0.75, marginTop: 3 }}>
+                  {isFree ? (locked ? "Déjà réclamée" : "GRATUITE") : `🪙 ${crate.price.toLocaleString("fr-FR")}`}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </main>
   );

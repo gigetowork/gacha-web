@@ -129,6 +129,7 @@ export type CaseConfig = {
   name: string;
   price: number;
   color: string;
+  image: string;
   free?: boolean;
   weights: Record<string, number>;
 };
@@ -140,6 +141,7 @@ export const CASES: CaseConfig[] = [
     name: "Caisse Recrue",
     price: 40,
     color: "#95A5A6",
+    image: "/images/caisses/recrue.png",
     weights: {
       "Industrial Grade ⚪": 6,
       "Mil-Spec Grade 🔵": 22,
@@ -153,6 +155,7 @@ export const CASES: CaseConfig[] = [
     name: "Caisse Standard",
     price: 100,
     color: "#1ABC9C",
+    image: "/images/caisses/standard.png",
     weights: {
       "Industrial Grade ⚪": 1,
       "Mil-Spec Grade 🔵": 9,
@@ -166,6 +169,7 @@ export const CASES: CaseConfig[] = [
     name: "Caisse Élite",
     price: 220,
     color: "#3498DB",
+    image: "/images/caisses/elite.png",
     weights: {
       "Mil-Spec Grade 🔵": 2,
       "Restricted 🟣": 15,
@@ -180,6 +184,7 @@ export const CASES: CaseConfig[] = [
     name: "Caisse Légendaire",
     price: 400,
     color: "#F1C40F",
+    image: "/images/caisses/legendaire.png",
     weights: {
       "Restricted 🟣": 5,
       "Classified 🩷": 27,
@@ -193,6 +198,7 @@ export const CASES: CaseConfig[] = [
     name: "Caisse Mythique",
     price: 700,
     color: "#9B59B6",
+    image: "/images/caisses/mythique.png",
     weights: {
       "Classified 🩷": 8,
       "Covert 🔴": 88,
@@ -208,9 +214,21 @@ export const FREE_CASE: CaseConfig = {
   name: "Caisse Gratuite",
   price: 0,
   color: "#2ECC71",
+  image: "/images/caisses/gratuite.png",
   free: true,
   weights: CASES[2].weights,
 };
+
+// Pourcentage de chance par rareté pour UNE caisse donnée, triés du plus courant au plus rare --
+// utilisé par la page détaillée de chaque caisse pour afficher les vraies probabilités (mêmes
+// poids que le tirage réel dans rollSkin(), juste normalisés en %).
+export function oddsForCase(caseConfig: CaseConfig): { rarity: string; pct: number }[] {
+  const tiers = RARITY_TIERS.filter((r) => (caseConfig.weights[r] ?? 0) > 0 && SKINS_BY_RARITY[r].length > 0);
+  const total = tiers.reduce((sum, r) => sum + (caseConfig.weights[r] ?? 0), 0);
+  return tiers
+    .map((r) => ({ rarity: r, pct: total > 0 ? ((caseConfig.weights[r] ?? 0) / total) * 100 : 0 }))
+    .sort((a, b) => b.pct - a.pct);
+}
 
 export function findCase(key: string): CaseConfig | undefined {
   if (key === FREE_CASE.key) return FREE_CASE;
