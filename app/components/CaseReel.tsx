@@ -196,6 +196,7 @@ export default function CaseReel({
               key={i}
               className={landed && isWinner ? "reel-item-pop" : undefined}
               style={{
+                position: "relative",
                 flex: `0 0 ${ITEM_WIDTH}px`,
                 width: ITEM_WIDTH,
                 height: itemHeight,
@@ -207,17 +208,45 @@ export default function CaseReel({
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 10,
+                overflow: "hidden",
                 boxShadow: landed && isWinner ? `0 0 34px ${color}` : "none",
               }}
             >
+              {/* L'image est volontairement floutée et masquée d'un "?" pour TOUS les objets du
+                  rouleau (pas seulement le gagnant) : tant que le décalage visuel entre l'endroit
+                  où le rouleau s'arrête et le vrai résultat (déjà déterminé côté serveur) n'est pas
+                  résolu, on évite de montrer une image nette qui pourrait ne pas correspondre au
+                  résultat réel révélé ensuite dans la carte de résultat. */}
               {it.image && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={it.image}
                   alt=""
-                  style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "100%",
+                    objectFit: "contain",
+                    filter: "blur(9px) brightness(0.55)",
+                    transform: "scale(1.15)", // évite que le flou laisse voir les bords nets de l'image
+                  }}
                 />
               )}
+              <div
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: 34,
+                  fontWeight: 800,
+                  color: "rgba(255,255,255,0.85)",
+                  textShadow: "0 2px 10px rgba(0,0,0,0.8)",
+                }}
+              >
+                ?
+              </div>
             </div>
           );
         })}
