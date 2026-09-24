@@ -105,8 +105,8 @@ export default async function CaissesPage() {
                   style={{
                     width: "100%",
                     height: 140,
-                    objectFit: "contain",
-                    filter: `drop-shadow(0 0 18px ${crate.color}77)`,
+                    objectFit: "cover",
+                    borderRadius: 12,
                     opacity: locked ? 0.45 : 1,
                   }}
                 />

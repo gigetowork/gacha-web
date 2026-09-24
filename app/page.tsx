@@ -244,8 +244,8 @@ export default async function Home() {
                   style={{
                     width: "100%",
                     height: 88,
-                    objectFit: "contain",
-                    filter: `drop-shadow(0 0 12px ${crate.color}77)`,
+                    objectFit: "cover",
+                    borderRadius: 10,
                     opacity: locked ? 0.45 : 1,
                   }}
                 />

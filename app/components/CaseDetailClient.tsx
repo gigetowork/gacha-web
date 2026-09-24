@@ -121,9 +121,22 @@ export default function CaseDetailClient({
               {isFree ? (liveFreeAvailable ? "Gratuite" : "Déjà réclamée aujourd'hui") : `🪙 ${caseConfig.price.toLocaleString("fr-FR")}`}
             </p>
 
-            <div className="case-float" style={{ display: "inline-block", filter: `drop-shadow(0 0 30px ${caseConfig.color}88)` }}>
+            <div
+              className="case-float"
+              style={{
+                display: "inline-block",
+                borderRadius: 18,
+                overflow: "hidden",
+                boxShadow: `0 0 44px ${caseConfig.color}88`,
+                border: `1px solid ${caseConfig.color}55`,
+              }}
+            >
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={caseConfig.image} alt={caseConfig.name} style={{ width: "100%", maxWidth: 320, height: "auto" }} />
+              <img
+                src={caseConfig.image}
+                alt={caseConfig.name}
+                style={{ width: "100%", maxWidth: 320, height: "auto", display: "block" }}
+              />
             </div>
 
             {error && <p style={{ color: "#F87171", fontSize: 13, margin: "16px 0 0" }}>{error}</p>}
