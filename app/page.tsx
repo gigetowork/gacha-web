@@ -19,6 +19,7 @@ const NAV_TABS = [
   { label: "ACCUEIL", href: "/", active: true, soon: false },
   { label: "INVENTAIRE", href: "/inventaire", active: false, soon: false },
   { label: "ÉQUIPEMENT", href: "/equipement", active: false, soon: false },
+  { label: "INVESTIR", href: "/investissements", active: false, soon: false },
   { label: "BOUTIQUE", href: "/boutique", active: false, soon: true },
   { label: "MES CAISSES", href: "/#caisses", active: false, soon: false },
   { label: "STATS", href: "/stats", active: false, soon: true },
