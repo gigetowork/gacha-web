@@ -2,30 +2,7 @@ import { getServerSession } from "next-auth";
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { pool } from "@/lib/db";
-
-type InventoryRow = {
-  rowid: number;
-  skin_name: string;
-  rarity: string;
-  condition_type: string | null;
-  wear_state: string | null;
-  price: number | null;
-  image_url: string | null;
-  weapon: string | null;
-};
-
-// Couleur de bordure par rareté, pour un coup d'oeil visuel façon CS:GO (les paliers ★ Couteau/
-// ★ Gants gardent leur violet distinctif). Si une nouvelle rareté est ajoutée côté bot et n'est pas
-// listée ici, elle retombe simplement sur le gris par défaut -> jamais d'erreur, juste moins joli.
-const RARITY_COLORS: Record<string, string> = {
-  "Industrial Grade ⚪": "#B0C3D9",
-  "Mil-Spec Grade 🔵": "#4B69FF",
-  "Restricted 🟣": "#8847FF",
-  "Classified 🩷": "#D32CE6",
-  "Covert 🔴": "#EB4B4B",
-  "★ Couteau 🔪": "#FFD700",
-  "★ Gants 🧤": "#FFD700",
-};
+import InventoryClient, { type InventoryRow } from "../components/InventoryClient";
 
 export default async function InventairePage() {
   const session = await getServerSession(authOptions);
@@ -54,65 +31,43 @@ export default async function InventairePage() {
   const totalValue = rows.reduce((sum, r) => sum + (r.price ?? 0), 0);
 
   return (
-    <main style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
-        <h1 style={{ margin: 0 }}>🎒 Ton inventaire</h1>
-        <Link href="/" style={{ color: "#888", fontSize: 14 }}>
-          ← Accueil
-        </Link>
-      </div>
+    <main style={{ position: "relative", minHeight: "100vh", overflow: "hidden" }}>
+      {/* Même fond flouté que la page Équipement (ta bannière, floutée et assombrie). */}
+      <div
+        aria-hidden
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: -1,
+          backgroundImage: "url(/images/hero-banner.jpg)",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          filter: "blur(18px) brightness(0.45) saturate(1.1)",
+          transform: "scale(1.1)",
+        }}
+      />
+      <div aria-hidden style={{ position: "fixed", inset: 0, zIndex: -1, background: "rgba(13,17,23,0.35)" }} />
 
-      <p style={{ opacity: 0.7, marginBottom: 32 }}>
-        {rows.length} skin{rows.length > 1 ? "s" : ""} — valeur totale : <strong>{totalValue.toFixed(2)} $</strong>
-      </p>
-
-      {rows.length === 0 ? (
-        <p style={{ opacity: 0.6 }}>Aucun skin pour l'instant — fais `!pull` ou ouvre une caisse sur Discord !</p>
-      ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
-            gap: 16,
-          }}
-        >
-          {rows.map((item) => {
-            const color = RARITY_COLORS[item.rarity] ?? "#666";
-            return (
-              <div
-                key={item.rowid}
-                style={{
-                  background: "#171a21",
-                  border: `1px solid ${color}55`,
-                  borderTop: `3px solid ${color}`,
-                  borderRadius: 8,
-                  padding: 12,
-                }}
-              >
-                {item.image_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={item.image_url}
-                    alt={item.skin_name}
-                    style={{ width: "100%", height: 100, objectFit: "contain", marginBottom: 8 }}
-                  />
-                )}
-                <div style={{ fontSize: 13, opacity: 0.7 }}>{item.weapon}</div>
-                <div style={{ fontWeight: 600, marginBottom: 4 }}>
-                  {item.condition_type === "StatTrak" ? "StatTrak™ " : ""}
-                  {item.condition_type === "Souvenir" ? "Souvenir " : ""}
-                  {item.skin_name}
-                </div>
-                <div style={{ fontSize: 12, opacity: 0.6 }}>{item.wear_state}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 13 }}>
-                  <span style={{ color }}>{item.rarity}</span>
-                  <span>{item.price?.toFixed(2)} $</span>
-                </div>
-              </div>
-            );
-          })}
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "40px 20px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 24 }}>
+          <h1 style={{ margin: 0, color: "#fff", textShadow: "0 2px 10px rgba(0,0,0,0.6)" }}>🎒 Ton inventaire</h1>
+          <Link href="/" style={{ color: "#ddd", fontSize: 14, textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
+            ← Accueil
+          </Link>
         </div>
-      )}
+
+        <p style={{ opacity: 0.85, color: "#ddd", marginBottom: 32 }}>
+          {rows.length} skin{rows.length > 1 ? "s" : ""} — valeur totale : <strong>{totalValue.toFixed(2)} $</strong>
+        </p>
+
+        {rows.length === 0 ? (
+          <p style={{ opacity: 0.7, color: "#ddd" }}>
+            Aucun skin pour l'instant — fais `!pull` ou ouvre une caisse sur Discord !
+          </p>
+        ) : (
+          <InventoryClient items={rows} />
+        )}
+      </div>
     </main>
   );
 }
