@@ -81,7 +81,12 @@ export default function CaseDetailClient({
       setPhase("spinning");
       if (isFree) setLiveFreeAvailable(false);
       else setLiveCoins((c) => c - caseConfig.price);
-      router.refresh();
+      // IMPORTANT : ne JAMAIS appeler router.refresh() pendant que le rouleau tourne -- ça force
+      // React à re-rendre l'arbre (nouvelles props serveur), ce qui réinitialise le style CSS
+      // `transform` du rouleau (posé impérativement via une ref) en plein milieu de l'animation.
+      // Ça désynchronise visuellement l'endroit où le rouleau s'arrête du vrai gain déjà acquis
+      // côté serveur -- c'était le bug signalé. Le refresh est donc reporté à la fin de
+      // l'animation (handleReelDone), où plus rien ne peut être perturbé.
     } catch {
       setError("Impossible de contacter le serveur, réessaie.");
       setOpening(false);
@@ -92,6 +97,7 @@ export default function CaseDetailClient({
     setPhase("result");
     setOpening(false);
     if (pending) setLiveCoins(pending.coins);
+    router.refresh();
   }
 
   function reset() {
