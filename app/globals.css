@@ -29,3 +29,18 @@
   transform: translateY(-8px) scale(1.03);
   filter: brightness(1.12);
 }
+
+/* Page Équipement (/equipement) : cadres de vitrine et cartes d'inventaire. */
+.equip-slot {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.equip-slot:hover {
+  transform: translateY(-3px);
+}
+
+.equip-card {
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.equip-card:hover {
+  transform: translateY(-4px);
+}
