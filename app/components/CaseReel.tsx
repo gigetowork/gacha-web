@@ -174,11 +174,16 @@ export default function CaseReel({
 
       <div
         ref={trackRef}
+        // IMPORTANT : `transform` n'est PAS déclaré ici. Il est posé uniquement de façon
+        // impérative (voir l'effet ci-dessous), pour que React ne le "possède" jamais en tant que
+        // prop -- s'il était déclaré ici, le moindre re-rendu du composant (pour n'importe quelle
+        // raison, même sans rapport avec le rouleau) réappliquerait cette valeur déclarée et
+        // écraserait la position atteinte par l'animation en cours, désynchronisant visuellement
+        // le point d'arrêt du vrai gain déjà acquis côté serveur. C'était le bug signalé.
         style={{
           display: "flex",
           gap: GAP,
           padding: `${(height - itemHeight) / 2}px 0`,
-          transform: "translateX(0px)",
           transition: `transform ${REEL_DURATION_MS}ms cubic-bezier(0.09, 0.79, 0.13, 1)`,
           willChange: "transform",
         }}
