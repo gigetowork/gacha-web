@@ -61,12 +61,13 @@ function skinRarityWeight(skin: Skin): number {
   return 1 / Math.pow(skinAvgPrice(skin), RARITY_PRICE_DAMPING);
 }
 
+// Toutes les usures ont la même chance (20% chacune) -- identique à WEAR_WEIGHTS dans bot.py.
 const WEAR_WEIGHTS: Record<string, number> = {
-  "Factory New": 7,
-  "Minimal Wear": 8,
-  "Field-Tested": 23,
-  "Well-Worn": 7,
-  "Battle-Scarred": 55,
+  "Factory New": 20,
+  "Minimal Wear": 20,
+  "Field-Tested": 20,
+  "Well-Worn": 20,
+  "Battle-Scarred": 20,
 };
 
 const VARIANT_WEIGHTS: Record<string, number> = { Normal: 100, StatTrak: 10, Souvenir: 2 };
