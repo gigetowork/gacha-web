@@ -26,7 +26,14 @@ const RARITY_COLORS: Record<string, string> = {
   "Covert 🔴": "#EB4B4B",
   "★ Couteau 🔪": "#FFD700",
   "★ Gants 🧤": "#FFD700",
+  "👑 ZiziTraillette 🌟": "#FFD23F",
 };
+
+// L'objet blague ZiziTraillette n'a pas de "valeur estimée" -- il n'a pas de prix.
+function formatPrice(price: number | null, rarity: string): string {
+  if (rarity === "👑 ZiziTraillette 🌟") return "Objet unique";
+  return price != null ? `${price.toFixed(2)} $` : "—";
+}
 
 function formatSkinLabel(item: InventoryRow) {
   const prefix =
@@ -94,7 +101,7 @@ export default function InventoryClient({ items }: { items: InventoryRow[] }) {
               <div style={{ fontSize: 12, opacity: 0.65, color: "#ccc" }}>{item.wear_state}</div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 13 }}>
                 <span style={{ color }}>{item.rarity}</span>
-                <span style={{ color: "#fff" }}>{item.price?.toFixed(2)} $</span>
+                <span style={{ color: "#fff" }}>{formatPrice(item.price, item.rarity)}</span>
               </div>
             </button>
           );
@@ -156,7 +163,7 @@ export default function InventoryClient({ items }: { items: InventoryRow[] }) {
               {selected.rarity}
             </p>
             <p style={{ fontSize: 15, marginTop: 10, color: "#FFD778", fontWeight: 700 }}>
-              {selected.price != null ? `${selected.price.toFixed(2)} $` : "—"}
+              {formatPrice(selected.price, selected.rarity)}
             </p>
 
             <button

@@ -18,7 +18,9 @@ export type Skin = {
 
 const SKINS_DATABASE = skinsData as Skin[];
 
-// Mêmes 7 paliers, même ordre, que RARITY_TIERS dans bot.py.
+// Mêmes 8 paliers, même ordre, que RARITY_TIERS dans bot.py.
+// "👑 ZiziTraillette 🌟" est un palier BLAGUE tout en haut de l'échelle : une seule arme unique
+// (le MAC-10 "Zizi Family"), sans prix (voir formatValue()), encore plus rare qu'un couteau/gant.
 export const RARITY_TIERS = [
   "Industrial Grade ⚪",
   "Mil-Spec Grade 🔵",
@@ -27,6 +29,7 @@ export const RARITY_TIERS = [
   "Covert 🔴",
   "★ Couteau 🔪",
   "★ Gants 🧤",
+  "👑 ZiziTraillette 🌟",
 ] as const;
 
 export const RARITY_COLORS: Record<string, string> = {
@@ -37,7 +40,15 @@ export const RARITY_COLORS: Record<string, string> = {
   "Covert 🔴": "#EB4B4B",
   "★ Couteau 🔪": "#E4B740",
   "★ Gants 🧤": "#00C2CB",
+  "👑 ZiziTraillette 🌟": "#FFD23F",
 };
+
+// Le palier ZiziTraillette n'a pas de "valeur estimée" (c'est une blague entre amis, pas un skin
+// réel) -- ce helper centralise l'affichage du prix partout sur le site.
+export function formatValue(price: number, rarity: string): string {
+  if (rarity === "👑 ZiziTraillette 🌟") return "Objet unique — inestimable";
+  return `${price.toFixed(2)} $`;
+}
 
 export const SKINS_BY_RARITY: Record<string, Skin[]> = {};
 for (const r of RARITY_TIERS) {
@@ -122,6 +133,7 @@ export const DUPLICATE_XP: Record<string, number> = {
   "Covert 🔴": 150,
   "★ Couteau 🔪": 400,
   "★ Gants 🧤": 400,
+  "👑 ZiziTraillette 🌟": 2000,
 };
 
 export type CaseConfig = {
@@ -177,6 +189,7 @@ export const CASES: CaseConfig[] = [
       "Covert 🔴": 42,
       "★ Couteau 🔪": 0.5,
       "★ Gants 🧤": 0.5,
+      "👑 ZiziTraillette 🌟": 0.05,
     },
   },
   {
@@ -191,6 +204,7 @@ export const CASES: CaseConfig[] = [
       "Covert 🔴": 65,
       "★ Couteau 🔪": 1.5,
       "★ Gants 🧤": 1.5,
+      "👑 ZiziTraillette 🌟": 0.15,
     },
   },
   {
@@ -204,6 +218,7 @@ export const CASES: CaseConfig[] = [
       "Covert 🔴": 88,
       "★ Couteau 🔪": 2,
       "★ Gants 🧤": 2,
+      "👑 ZiziTraillette 🌟": 0.2,
     },
   },
 ];

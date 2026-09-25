@@ -6796,5 +6796,21 @@
         }
       }
     }
+  },
+  {
+    "name": "ZiziTraillette",
+    "weapon": "Mac-10",
+    "rarity": "👑 ZiziTraillette 🌟",
+    "variants": [
+      "Normal"
+    ],
+    "wears": {
+      "Unique": {
+        "image": "https://gacha-web-kappa.vercel.app/images/skins/zizitraillette.png",
+        "prices": {
+          "Normal": 0
+        }
+      }
+    }
   }
 ]
