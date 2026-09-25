@@ -16,7 +16,13 @@ export type Skin = {
   wears: Record<string, SkinWearInfo>;
 };
 
-const SKINS_DATABASE = skinsData as Skin[];
+// "as unknown as Skin[]" (double assertion) plutôt que "as Skin[]" directement : TypeScript
+// infère un type très précis (littéral) pour le JSON importé, objet par objet -- chaque skin a un
+// jeu de clés "wears" différent (les 5 usures habituelles, sauf la ZiziTraillette qui n'a qu'une
+// seule clé "Unique"). Cette hétérogénéité fait échouer la comparaison structurelle directe vers
+// Skin (qui utilise un index signature générique), même si les données sont parfaitement valides
+// à l'exécution -- d'où le détour par "unknown" pour dire à TS "fais-moi confiance ici".
+const SKINS_DATABASE = skinsData as unknown as Skin[];
 
 // Mêmes 8 paliers, même ordre, que RARITY_TIERS dans bot.py.
 // "👑 ZiziTraillette 🌟" est un palier BLAGUE tout en haut de l'échelle : une seule arme unique
